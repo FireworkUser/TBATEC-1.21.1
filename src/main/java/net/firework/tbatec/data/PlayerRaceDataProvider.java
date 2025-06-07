@@ -5,17 +5,16 @@ import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.common.capabilities.Capability;
 import net.neoforged.neoforge.common.capabilities.ICapabilitySerializable;
 import net.neoforged.neoforge.common.util.LazyOptional;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class PlayerRaceDataProvider implements ICapabilitySerializable<CompoundTag> {
     private final PlayerRaceData raceData = new PlayerRaceData();
     private final LazyOptional<PlayerRaceData> optional = LazyOptional.of(() -> raceData);
 
-    @Nonnull
+    @NotNull
     @Override
-    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+    public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         return PlayerRaceData.PLAYER_RACE_DATA.orEmpty(cap, optional);
     }
 
@@ -27,5 +26,9 @@ public class PlayerRaceDataProvider implements ICapabilitySerializable<CompoundT
     @Override
     public void deserializeNBT(CompoundTag nbt) {
         raceData.deserializeNBT(nbt);
+    }
+
+    public void invalidate() {
+        optional.invalidate();
     }
 }

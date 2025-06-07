@@ -1,14 +1,18 @@
 package net.firework.tbatec;
 
+import net.firework.tbatec.network.RaceSelectionPacket;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.NetworkRegistry;
 import net.neoforged.neoforge.network.simple.SimpleChannel;
+import net.firework.tbatec.events.CapabilityEvents;
+import net.firework.tbatec.abilities.RaceAbilitiesHandler;
 
 @Mod(TBATEMod.MODID)
 public class TBATEMod {
@@ -27,8 +31,17 @@ public class TBATEMod {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::clientSetup);
 
-        NeoForge.EVENT_BUS.register(this);
-        NeoForge.EVENT_BUS.register(new ClientEventHandler());
+        // Register mod event bus handlers
+        modEventBus.register(CapabilityEvents.class);
+
+        // Register forge event bus handlers
+        NeoForge.EVENT_BUS.register(CapabilityEvents.class);
+        NeoForge.EVENT_BUS.register(RaceAbilitiesHandler.class);
+
+        // Only register client handler on client side
+        if (FMLEnvironment.dist.isClient()) {
+            modEventBus.addListener(this::clientSetup);
+        }
 
         modContainer.registerConfig(ModConfig.Type.COMMON, RaceConfig.SPEC);
     }
@@ -44,6 +57,7 @@ public class TBATEMod {
     }
 
     private void clientSetup(final FMLClientSetupEvent event) {
-        // Client-side initialization
+        // Register client event handler
+        NeoForge.EVENT_BUS.register(new net.firework.tbatec.client.ClientEventHandler());
     }
 }

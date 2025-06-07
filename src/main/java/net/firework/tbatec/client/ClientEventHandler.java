@@ -1,26 +1,40 @@
 package net.firework.tbatec.client;
 
+import net.firework.tbatec.TBATEMod;
 import net.firework.tbatec.client.gui.RaceSelectionScreen;
 import net.firework.tbatec.data.PlayerRaceData;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.event.TickEvent;
 
-@EventBusSubscriber(modid = "tbatec", bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class ClientEventHandler {
+    private static boolean shouldShowRaceSelection = false;
+    private static int tickDelay = 0;
 
     @SubscribeEvent
-    public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
-        Player player = event.getEntity();
-        if (player.level().isClientSide) {
-            // Check if player has selected a race
-            PlayerRaceData raceData = PlayerRaceData.get(player);
-            if (raceData.getRace() == null) {
-                // Show race selection screen
-                Minecraft.getInstance().setScreen(new RaceSelectionScreen());
+    public void onClientPlayerLogin(ClientPlayerNetworkEvent.LoggingIn event) {
+        // Schedule race selection screen to open after a delay
+        shouldShowRaceSelection = true;
+        tickDelay = 20; // 1 second delay
+    }
+
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && shouldShowRaceSelection && tickDelay > 0) {
+            tickDelay--;
+            if (tickDelay == 0) {
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player != null && mc.screen == null) {
+                    PlayerRaceData raceData = PlayerRaceData.get(mc.player);
+                    if (raceData.getRace() == null) {
+                        mc.setScreen(new RaceSelectionScreen());
+                    }
+                    shouldShowRaceSelection = false;
+                }
             }
         }
     }
