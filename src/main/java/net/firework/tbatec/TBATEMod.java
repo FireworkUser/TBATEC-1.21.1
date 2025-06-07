@@ -1,6 +1,7 @@
 package net.firework.tbatec;
 
 import net.firework.tbatec.network.RaceSelectionPacket;
+import net.firework.tbatec.data.PlayerRaceData;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -9,9 +10,10 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.network.NetworkRegistry;
-import net.neoforged.neoforge.network.simple.SimpleChannel;
-import net.firework.tbatec.events.CapabilityEvents;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.firework.tbatec.events.PlayerEvents;
 import net.firework.tbatec.abilities.RaceAbilitiesHandler;
 
 @Mod(TBATEMod.MODID)
@@ -19,26 +21,19 @@ public class TBATEMod {
     public static final String MODID = "tbatec";
     public static final String VERSION = "1.0.0";
 
-    private static final String PROTOCOL_VERSION = "1";
-    public static final SimpleChannel PACKET_HANDLER = NetworkRegistry.newSimpleChannel(
-            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MODID, "main"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
-    );
-
     public TBATEMod(IEventBus modEventBus, ModContainer modContainer) {
+        // Register data attachments
+        PlayerRaceData.ATTACHMENT_TYPES.register(modEventBus);
+
+        // Register common setup
         modEventBus.addListener(this::commonSetup);
-        modEventBus.addListener(this::clientSetup);
+        modEventBus.addListener(this::registerPayloads);
 
-        // Register mod event bus handlers
-        modEventBus.register(CapabilityEvents.class);
-
-        // Register forge event bus handlers
-        NeoForge.EVENT_BUS.register(CapabilityEvents.class);
+        // Register game event bus handlers
+        NeoForge.EVENT_BUS.register(PlayerEvents.class);
         NeoForge.EVENT_BUS.register(RaceAbilitiesHandler.class);
 
-        // Only register client handler on client side
+        // Only register client setup on client side
         if (FMLEnvironment.dist.isClient()) {
             modEventBus.addListener(this::clientSetup);
         }
@@ -47,13 +42,16 @@ public class TBATEMod {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        // Register packets
-        int messageNumber = 0;
-        PACKET_HANDLER.messageBuilder(RaceSelectionPacket.class, messageNumber++)
-                .decoder(RaceSelectionPacket::decode)
-                .encoder(RaceSelectionPacket::encode)
-                .consumerMainThread(RaceSelectionPacket::handle)
-                .add();
+        // Common setup
+    }
+
+    private void registerPayloads(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar("1");
+        registrar.playToServer(
+                RaceSelectionPacket.TYPE,
+                RaceSelectionPacket.STREAM_CODEC,
+                RaceSelectionPacket::handle
+        );
     }
 
     private void clientSetup(final FMLClientSetupEvent event) {

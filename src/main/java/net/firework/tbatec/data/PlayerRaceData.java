@@ -1,19 +1,51 @@
 package net.firework.tbatec.data;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.firework.tbatec.Race;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.neoforge.common.capabilities.Capability;
-import net.neoforged.neoforge.common.capabilities.CapabilityManager;
-import net.neoforged.neoforge.common.capabilities.CapabilityToken;
-import net.neoforged.neoforge.common.util.INBTSerializable;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.firework.tbatec.TBATEMod;
 
-public class PlayerRaceData implements INBTSerializable<CompoundTag> {
-    public static final Capability<PlayerRaceData> PLAYER_RACE_DATA =
-            CapabilityManager.get(new CapabilityToken<PlayerRaceData>() {});
+import java.util.function.Supplier;
+
+public class PlayerRaceData {
+    public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES =
+            DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, TBATEMod.MODID);
+
+    private static final Codec<PlayerRaceData> CODEC = RecordCodecBuilder.create(instance ->
+            instance.group(
+                    Codec.STRING.optionalFieldOf("race", "").forGetter(data ->
+                            data.race != null ? data.race.name() : ""
+                    )
+            ).apply(instance, PlayerRaceData::new)
+    );
+
+    public static final Supplier<AttachmentType<PlayerRaceData>> PLAYER_RACE_DATA =
+            ATTACHMENT_TYPES.register("player_race_data", () ->
+                    AttachmentType.builder(() -> new PlayerRaceData())
+                            .serialize(CODEC)
+                            .build()
+            );
 
     private Race race;
     private boolean hasChanged = false;
+
+    public PlayerRaceData() {
+        this.race = null;
+    }
+
+    private PlayerRaceData(String raceName) {
+        if (!raceName.isEmpty()) {
+            try {
+                this.race = Race.valueOf(raceName);
+            } catch (IllegalArgumentException e) {
+                this.race = null;
+            }
+        }
+    }
 
     public Race getRace() {
         return race;
@@ -32,23 +64,7 @@ public class PlayerRaceData implements INBTSerializable<CompoundTag> {
         this.hasChanged = true;
     }
 
-    @Override
-    public CompoundTag serializeNBT() {
-        CompoundTag nbt = new CompoundTag();
-        if (race != null) {
-            nbt.putString("race", race.name());
-        }
-        return nbt;
-    }
-
-    @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        if (nbt.contains("race")) {
-            this.race = Race.valueOf(nbt.getString("race"));
-        }
-    }
-
     public static PlayerRaceData get(Player player) {
-        return player.getCapability(PLAYER_RACE_DATA).orElse(new PlayerRaceData());
+        return player.getData(PLAYER_RACE_DATA);
     }
 }

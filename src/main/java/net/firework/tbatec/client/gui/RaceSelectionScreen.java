@@ -1,7 +1,6 @@
 package net.firework.tbatec.client.gui;
 
 import net.firework.tbatec.Race;
-import net.firework.tbatec.TBATEMod;
 import net.firework.tbatec.network.RaceSelectionPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -69,8 +68,8 @@ public class RaceSelectionScreen extends Screen {
     private void confirmRaceSelection() {
         if (selectedRace != null && !hasSelected) {
             hasSelected = true;
-            // Send packet to server
-            TBATEMod.PACKET_HANDLER.sendToServer(new RaceSelectionPacket(selectedRace));
+            // Send packet to server using new method
+            RaceSelectionPacket.sendToServer(selectedRace);
             this.onClose();
         }
     }
