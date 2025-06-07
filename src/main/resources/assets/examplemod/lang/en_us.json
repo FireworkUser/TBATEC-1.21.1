@@ -1,5 +1,10 @@
 {
-  "itemGroup.examplemod": "Example Mod Tab",
-  "block.examplemod.example_block": "Example Block",
-  "item.examplemod.example_item": "Example Item"
+  "race.tbatec.human": "Human",
+  "race.tbatec.elf": "Elf",
+  "race.tbatec.dwarf": "Dwarf",
+  "gui.tbatec.race_selection.title": "Choose Your Race",
+  "gui.tbatec.race_selection.confirm": "Confirm Selection",
+  "race.tbatec.human.description": "Balanced race with no special abilities",
+  "race.tbatec.elf.description": "Agile and magical, bonus to archery and magic",
+  "race.tbatec.dwarf.description": "Strong and sturdy, bonus to mining and crafting"
 }
